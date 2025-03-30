@@ -96,6 +96,10 @@ def refine_transcription():
         return jsonify({"refinedText": response_json[0].get("summary_text", text)})
     else:
         return jsonify({"error": f"API Error {response.status_code}: {response.text}"}), 500
+    
+@app.route("/")
+def home():
+    return "Healthcare Translation Web App is running!"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
