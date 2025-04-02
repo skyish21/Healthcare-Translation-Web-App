@@ -9,8 +9,7 @@ import os
 
 app = Flask(__name__)
 
-FRONTEND_URL = "https://your-vercel-app.vercel.app"  
-
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 # Enable CORS only for your Vercel frontend
 CORS(app, resources={
     r"/*": {
@@ -21,7 +20,6 @@ CORS(app, resources={
 })
 
 
-FRONTEND_URL = os.getenv("FRONTEND_URL")
 # Hugging Face API Key (Replace with your actual key)
 HF_API_KEY = os.getenv("HF_API_KEY")
 
