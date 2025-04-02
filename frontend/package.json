@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Healthcare Translation App",
   "main": "index.js",
+  "homepage": ".",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -19,4 +20,3 @@
   "author": "",
   "license": "ISC"
 }
-
