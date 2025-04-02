@@ -8,7 +8,7 @@ function App() {
   const [transcription, setTranscription] = useState("");
   const [refinedText, setRefinedText] = useState("");
 
-  const backendURL = "https://healthcare-translation-web-app-ra8r.onrender.com";
+  const backendURL = process.env.REACT_APP_BACKEND_URL;
 
   const handleTranslate = async () => {
     try {
