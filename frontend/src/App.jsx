@@ -1,102 +1,150 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
 
 function App() {
-  const [text, setText] = useState("");
-  const [translatedText, setTranslatedText] = useState("");
-  const [language, setLanguage] = useState("es"); // Default: Spanish
-  const [transcription, setTranscription] = useState("");
-  const [refinedText, setRefinedText] = useState("");
+  const [inputText, setInputText] = useState('');
+  const [translatedText, setTranslatedText] = useState('');
+  const [refinedText, setRefinedText] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const [language, setLanguage] = useState('es');
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://your-render-backend.onrender.com';
 
-  const backendURL = process.env.REACT_APP_BACKEND_URL;
+  // Speech recognition setup
+  const [recognition, setRecognition] = useState(null);
+
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window) {
+      const speechRecognition = new window.webkitSpeechRecognition();
+      speechRecognition.continuous = false;
+      speechRecognition.interimResults = false;
+      speechRecognition.lang = 'en-US';
+
+      speechRecognition.onresult = (event) => {
+        setInputText(event.results[0][0].transcript);
+        setIsListening(false);
+      };
+
+      speechRecognition.onerror = () => setIsListening(false);
+      setRecognition(speechRecognition);
+    }
+  }, []);
+
+  const handleSpeechToText = () => {
+    if (recognition) {
+      setIsListening(true);
+      recognition.start();
+    } else {
+      alert('Speech recognition not supported');
+    }
+  };
 
   const handleTranslate = async () => {
+    if (!inputText.trim()) return;
     try {
-      const response = await axios.post(`${backendURL}/translate`, { text, language });
-      setTranslatedText(response.data.translatedText);
+      const response = await fetch(`${BACKEND_URL}/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: inputText, language })
+      });
+      const data = await response.json();
+      setTranslatedText(data.translatedText || 'Translation failed');
     } catch (error) {
-      console.error("Translation Error:", error);
+      setTranslatedText('Translation error');
     }
   };
 
-  const handleSpeechToText = async () => {
+  const handleRefine = async () => {
+    if (!inputText.trim()) return;
     try {
-      const response = await axios.post(`${backendURL}/speech-to-text`);
-      setTranscription(response.data.transcription);
+      const response = await fetch(`${BACKEND_URL}/refine-transcription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: inputText })
+      });
+      const data = await response.json();
+      setRefinedText(data.refinedText || 'Refinement failed');
     } catch (error) {
-      console.error("Speech-to-Text Error:", error);
+      setRefinedText('Refinement error');
     }
   };
 
-  const handleTextToSpeech = async () => {
-    try {
-      await axios.post(`${backendURL}/text-to-speech`, { text, voice: "male" });
-    } catch (error) {
-      console.error("Text-to-Speech Error:", error);
-    }
-  };
-
-  const handleRefineTranscription = async () => {
-    try {
-      const response = await axios.post(`${backendURL}/refine-transcription`, { text: transcription });
-      setRefinedText(response.data.refinedText);
-    } catch (error) {
-      console.error("Refinement Error:", error);
+  const handleSpeak = () => {
+    if ('speechSynthesis' in window && translatedText) {
+      const utterance = new SpeechSynthesisUtterance(translatedText);
+      utterance.lang = language;
+      window.speechSynthesis.speak(utterance);
     }
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "600px", margin: "auto", textAlign: "center", border: "1px solid #ccc", borderRadius: "10px", backgroundColor: "#f9f9f9" }}>
-      <h1 style={{ fontSize: "24px", fontWeight: "bold" }}>Healthcare Translation App</h1>
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
+      <h1>Healthcare Translation App</h1>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <button 
+          onClick={handleSpeechToText}
+          style={{ 
+            padding: '8px 16px', 
+            backgroundColor: isListening ? 'red' : '#4CAF50', 
+            color: 'white', 
+            border: 'none',
+            marginRight: '10px'
+          }}
+        >
+          {isListening ? 'Listening...' : 'Speak'}
+        </button>
+        
+        <textarea
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          placeholder="Speak or type your medical emergency..."
+          style={{ width: '100%', height: '100px', padding: '10px', marginTop: '10px' }}
+        />
+      </div>
 
-      <textarea
-        style={{ width: "100%", padding: "10px", border: "1px solid #ddd", marginBottom: "10px" }}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Enter text to translate..."
-      />
+      <div style={{ marginBottom: '20px' }}>
+        <select 
+          value={language} 
+          onChange={(e) => setLanguage(e.target.value)}
+          style={{ padding: '8px', marginRight: '10px' }}
+        >
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+        </select>
 
-      <div style={{ marginBottom: "10px" }}>
-        <button style={{ backgroundColor: "blue", color: "white", padding: "10px", borderRadius: "5px", marginRight: "10px" }} onClick={handleTranslate}>
+        <button 
+          onClick={handleTranslate}
+          style={{ padding: '8px 16px', backgroundColor: '#2196F3', color: 'white', border: 'none', marginRight: '10px' }}
+        >
           Translate
         </button>
-        <button style={{ backgroundColor: "green", color: "white", padding: "10px", borderRadius: "5px" }} onClick={handleTextToSpeech}>
-          Speak
+        
+        <button 
+          onClick={handleRefine}
+          style={{ padding: '8px 16px', backgroundColor: '#FF9800', color: 'white', border: 'none' }}
+        >
+          Refine
         </button>
       </div>
 
-      {translatedText && (
-        <div style={{ padding: "10px", border: "1px solid #ddd", backgroundColor: "#e6e6e6", marginBottom: "10px" }}>
-          <h2 style={{ fontSize: "18px", fontWeight: "bold" }}>Translated Text:</h2>
-          <p>{translatedText}</p>
+      <div>
+        <h3>Translated Text:</h3>
+        <div style={{ padding: '15px', backgroundColor: '#f5f5f5', margin: '10px 0' }}>
+          {translatedText || 'Translation will appear here...'}
         </div>
-      )}
-
-      <div style={{ marginBottom: "10px" }}>
-        <button style={{ backgroundColor: "purple", color: "white", padding: "10px", borderRadius: "5px" }} onClick={handleSpeechToText}>
-          Speech-to-Text
+        <button 
+          onClick={handleSpeak}
+          disabled={!translatedText}
+          style={{ padding: '8px 16px', backgroundColor: '#9C27B0', color: 'white', border: 'none' }}
+        >
+          Speak Translation
         </button>
-      </div>
 
-      {transcription && (
-        <div style={{ padding: "10px", border: "1px solid #ddd", backgroundColor: "#e6e6e6", marginBottom: "10px" }}>
-          <h2 style={{ fontSize: "18px", fontWeight: "bold" }}>Transcription:</h2>
-          <p>{transcription}</p>
+        <h3>Refined Medical Text:</h3>
+        <div style={{ padding: '15px', backgroundColor: '#f5f5f5', margin: '10px 0' }}>
+          {refinedText || 'Refined text will appear here...'}
         </div>
-      )}
-
-      <div style={{ marginBottom: "10px" }}>
-        <button style={{ backgroundColor: "indigo", color: "white", padding: "10px", borderRadius: "5px" }} onClick={handleRefineTranscription}>
-          Refine Transcription
-        </button>
       </div>
-
-      {refinedText && (
-        <div style={{ padding: "10px", border: "1px solid #ddd", backgroundColor: "#e6e6e6", marginBottom: "10px" }}>
-          <h2 style={{ fontSize: "18px", fontWeight: "bold" }}>Refined Medical Transcription:</h2>
-          <p>{refinedText}</p>
-        </div>
-      )}
     </div>
   );
 }
