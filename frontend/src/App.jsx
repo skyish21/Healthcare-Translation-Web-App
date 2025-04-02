@@ -6,7 +6,7 @@ function App() {
   const [refinedText, setRefinedText] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [language, setLanguage] = useState('es');
-  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://your-render-backend.onrender.com';
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://healthcare-translation-web-app-ra8r.onrender.com";
 
   // Speech recognition setup
   const [recognition, setRecognition] = useState(null);
