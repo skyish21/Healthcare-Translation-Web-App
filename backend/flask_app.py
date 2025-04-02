@@ -8,10 +8,23 @@ import requests
 import os
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend integration
 
+FRONTEND_URL = "https://your-vercel-app.vercel.app"  
+
+# Enable CORS only for your Vercel frontend
+CORS(app, resources={
+    r"/*": {
+        "origins": [FRONTEND_URL],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
+
+
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 # Hugging Face API Key (Replace with your actual key)
 HF_API_KEY = os.getenv("HF_API_KEY")
+
 
 def txtsp(text, voice_choice):
     """ Convert text to speech """
